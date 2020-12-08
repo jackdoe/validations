@@ -14,8 +14,8 @@ type User struct {
 	Company        Company
 }
 
-func (c *User) Validate() error {
-	if c.Name == "invalid" {
+func (u *User) Validate() error {
+	if u.Name == "invalid" {
 		return errors.New("bad user name")
 	}
 
