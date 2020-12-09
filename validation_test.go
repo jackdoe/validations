@@ -21,6 +21,7 @@ type User struct {
 	Password       string `valid:"length(6|20)"`
 	SecurePassword string `valid:"numeric"`
 	Email          string `valid:"email"`
+	Enum           string `valid:"in(a|bb|cc)"`
 	CompanyID      uint
 	Company        Company
 }
@@ -60,27 +61,31 @@ func TestGoValidation(t *testing.T) {
 
 	for _, c := range []testCase{
 		testCase{
-			User:          User{Name: "", Password: "123123", Email: "a@gmail.com"},
+			User:          User{Enum: "a", Name: "", Password: "123123", Email: "a@gmail.com"},
 			ExpectedError: "Name: non zero value required",
 		},
 		testCase{
-			User:          User{Name: "zz", Password: "123123", Email: "zail.com"},
+			User:          User{Enum: "a", Name: "zz", Password: "123123", Email: "zail.com"},
 			ExpectedError: "Email: zail.com does not validate as email",
 		},
 		testCase{
-			User:          User{Name: "invalid", Password: "123123", Email: "a@zail.com"},
+			User:          User{Enum: "a", Name: "invalid", Password: "123123", Email: "a@zail.com"},
 			ExpectedError: "bad user name",
 		},
 		testCase{
-			User:          User{Name: "zzz", Password: "123", Email: "a@zail.com"},
+			User:          User{Enum: "a", Name: "zzz", Password: "123", Email: "a@zail.com"},
 			ExpectedError: "Password: 123 does not validate as length(6|20)",
 		},
 		testCase{
-			User:          User{Name: "valid", Password: "123123", Email: "a@zail.com", Company: Company{Name: "invalid"}},
+			User:          User{Enum: "z", Name: "valid", Password: "123123", Email: "a@zail.com", Company: Company{Name: "z"}},
+			ExpectedError: "Enum: z does not validate as in(a|bb|cc)",
+		},
+		testCase{
+			User:          User{Enum: "a", Name: "valid", Password: "123123", Email: "a@zail.com", Company: Company{Name: "invalid"}},
 			ExpectedError: "bad company name",
 		},
 		testCase{
-			User:          User{Name: "valid", Password: "123123", Email: "a@zail.com", Company: Company{Name: "valid"}},
+			User:          User{Enum: "a", Name: "valid", Password: "123123", Email: "a@zail.com", Company: Company{Name: "valid"}},
 			ExpectedError: "",
 		},
 	} {
@@ -90,10 +95,13 @@ func TestGoValidation(t *testing.T) {
 				t.Fatalf("expected nil error but got <%v>", result.Error.Error())
 			}
 		} else {
-			if result.Error.Error() != c.ExpectedError {
-				t.Fatalf("expected <%v> got <%v>", c.ExpectedError, result.Error.Error())
+			if result.Error == nil {
+				t.Fatalf("expected error but got nil for <%v>", c.User)
+			} else {
+				if result.Error.Error() != c.ExpectedError {
+					t.Fatalf("expected <%v> got <%v>", c.ExpectedError, result.Error.Error())
+				}
 			}
-
 		}
 
 	}

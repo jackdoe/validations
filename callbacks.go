@@ -11,14 +11,16 @@ type Validate interface {
 }
 
 func validate(db *gorm.DB) {
-	value := db.Statement.ReflectValue.Addr().Interface()
-	_, err := govalidator.ValidateStruct(value)
-	if err != nil {
-		db.AddError(err)
-	}
-	if v, ok := value.(Validate); ok {
-		if err := v.Validate(); err != nil {
+	if db.Statement.ReflectValue.CanAddr() {
+		value := db.Statement.ReflectValue.Addr().Interface()
+		_, err := govalidator.ValidateStruct(value)
+		if err != nil {
 			db.AddError(err)
+		}
+		if v, ok := value.(Validate); ok {
+			if err := v.Validate(); err != nil {
+				db.AddError(err)
+			}
 		}
 	}
 }
@@ -27,9 +29,9 @@ func validate(db *gorm.DB) {
 func RegisterCallbacks(db *gorm.DB) {
 	callback := db.Callback()
 	if callback.Create().Get("validations:validate") == nil {
-		callback.Create().Before("gorm:before_create").Register("validations:validate", validate)
+		callback.Create().Before("gorm:create").Register("validations:validate", validate)
 	}
 	if callback.Update().Get("validations:validate") == nil {
-		callback.Update().Before("gorm:before_update").Register("validations:validate", validate)
+		callback.Update().Before("gorm:update").Register("validations:validate", validate)
 	}
 }
